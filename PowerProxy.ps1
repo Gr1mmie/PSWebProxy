@@ -12,12 +12,20 @@ if ($bytes){Clear-Variable -name bytes}
 if ($cstrm){$cstrm.Dispose()}
 if ($client){$client.Dispose()}
 }
+
+Function Initialize-Server (
+[Parameter(Mandatory=$true)][String]$IP,
+[Parameter(Mandatory=$true)][Int32]$Port
+){
+$global:svr = new-object System.Net.Sockets.TcpListener($IP, $Port)
+$global:svr.start()
+write-host "[*] Server started on $IP`:$Port" -fore cyan
+}
+
 try{
 $ip_addr = '0.0.0.0'
 $port = 1080
-$svr = new-object System.Net.Sockets.TcpListener($ip_addr, $port)
-$svr.start()
-write-host "[*] Server started on $ip_addr`:$port" -fore cyan
+Initialize-Server -IP $ip_addr -Port $port
 start-sleep 1
 while ($true){
 write-host "[*] Awaiting connection..." -fore cyan
@@ -36,12 +44,11 @@ write-host $line
 if ($traffic){ $traffic = $traffic + "$line`n" }
 else {$traffic = "$line`n"}
 }while ($line)
-#this segment could be repurposed to forward/drop a captured packet
-#write-host "[*] Press any key to continue or x to quit"
 Write-host "[*] Press f to forward, d to drop, or x to quit"
 $ui = $Host.UI.RawUI.ReadKey("NoEcho, IncludeKeyDown")
 if ($ui.Character -eq "x"){exit}
 elseif($ui.Character -eq "d"){
+Write-host "[*] Dropping packet..."
 if ($strm){$strm.Dispose()}
 if ($read){$read.Dispose()}
 if ($conn){$conn.close()}
@@ -54,7 +61,8 @@ write-host "[*] Forwarding traffic to $ip_addr`:$port"
 Invoke-Connection -IP $ip_addr -Port $port -Data $traffic
 }
 else{
-write idkhowugotherebutY
+write-host "[-] Invalid input detected" -fore red
+exit
 }
 }
 start-sleep 0.5
@@ -71,5 +79,5 @@ Write-Warning $($_.Exception.Message)
 }
 finally{
 write-host "[*] Closing connection..." -fore cyan
-$svr.stop()
+$global:svr.stop()
 }
