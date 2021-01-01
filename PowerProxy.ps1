@@ -8,8 +8,9 @@ $client = New-Object System.Net.Sockets.TcpClient($ip_addr, $port)
 $cstrm = $client.GetStream()
 $cstrm.Write($bytes,0,$bytes.length)
 $cstrm.Flush()
-#if ($cstrm){$cstrm.Dispose()}
-#if ($client){$client.Dispose()}
+if ($bytes){Clear-Variable -name bytes}
+if ($cstrm){$cstrm.Dispose()}
+if ($client){$client.Dispose()}
 }
 try{
 $ip_addr = '0.0.0.0'
@@ -40,17 +41,20 @@ else {$traffic = "$line`n"}
 Write-host "[*] Press f to forward, d to drop, or x to quit"
 $ui = $Host.UI.RawUI.ReadKey("NoEcho, IncludeKeyDown")
 if ($ui.Character -eq "x"){exit}
-if ($ui.Character -eq "d"){
+elseif($ui.Character -eq "d"){
 if ($strm){$strm.Dispose()}
 if ($read){$read.Dispose()}
 if ($conn){$conn.close()}
 }
-if ($ui.Character -eq "f"){
+elseif($ui.Character -eq "f"){
 if ($ip_addr -eq '0.0.0.0'){$ip_addr = '127.0.0.1'}
 #open 9080 w/ nc to test
 $port = 9080
 write-host "[*] Forwarding traffic to $ip_addr`:$port"
 Invoke-Connection -IP $ip_addr -Port $port -Data $traffic
+}
+else{
+write idkhowugotherebutY
 }
 }
 start-sleep 0.5
@@ -61,7 +65,10 @@ if ($conn){$conn.close()}
 }
 }
 catch [System.Net.Sockets.SocketException]{Write-host "[-] sumthing borked`n[-] svr still open" -fore red}
-catch {Write-host "[-] sumthing else borked, not svr this time" -fore red}
+catch {
+Write-host "[-] sumthing else borked, not svr this time" -fore red
+Write-Warning $($_.Exception.Message)
+}
 finally{
 write-host "[*] Closing connection..." -fore cyan
 $svr.stop()
