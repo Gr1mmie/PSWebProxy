@@ -49,16 +49,18 @@ try{
   	if ($ui.Character -eq "x"){exit}
   	elseif($ui.Character -eq "d"){
     	Write-host "[*] Dropping packet..."
+	start-sleep 1
     	if ($strm){$strm.Dispose()}
     	if ($read){$read.Dispose()}
     	if ($conn){$conn.close()}
   	}
   	elseif($ui.Character -eq "f"){
     	if ($ip_addr -eq '0.0.0.0'){$ip_addr = '127.0.0.1'}
-#open 9080 w/ nc to test
+			#open 9080 w/ nc to test
 			$port = 9080
 			write-host "[*] Forwarding traffic to $ip_addr`:$port"
 			Invoke-Connection -IP $ip_addr -Port $port -Data $traffic
+			start-sleep 1
 		}
 		else{
 			write-host "[-] Invalid input detected" -fore red
