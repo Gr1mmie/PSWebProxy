@@ -1,13 +1,16 @@
 Function Invoke-Connection{
-	[Alias("Invoke-Fwd")]
+	
+	[Alias("Invoke-Fwd", "Open-Client", "Open-Conn", "Invoke-Conn")]
+	
 	param(
-	[Parameter(Mandatory=$true)][String]$IP,
-	[Parameter(Mandatory=$true)][Int32]$Port,
-	[Parameter(Mandatory=$true)][String]$Data
+		[Parameter(Mandatory=$false)][String]$IP = "127.0.0.1",
+		[Parameter(Mandatory=$false)][Int32]$Port = 9080,
+		[Parameter(Mandatory=$true)][String]$Data
 	)
 	
+	write-host "[*] Forwarding traffic to $IP`:$Port"
 	[byte[]]$bytes = [System.Text.Encoding]::ASCII.GetBytes($Data)
-	$client = New-Object System.Net.Sockets.TcpClient($ip_addr, $port)
+	$client = New-Object System.Net.Sockets.TcpClient($IP, $Port)
 	$cstrm = $client.GetStream()
 	$cstrm.Write($bytes,0,$bytes.length)
 	$cstrm.Flush()
@@ -17,10 +20,12 @@ Function Invoke-Connection{
 }
 
 Function Initialize-Server{
+	
 	[Alias("Start-Server", "Open-Server", "Invoke-ServerOpen")]
+	
 	param(
-	[Parameter(Mandatory=$true)][String]$IP,
-	[Parameter(Mandatory=$true)][Int32]$Port
+		[Parameter(Mandatory=$false)][String]$IP = "0.0.0.0",
+		[Parameter(Mandatory=$false)][Int32]$Port = 1080
 	)
 	
 	$global:svr = new-object System.Net.Sockets.TcpListener($IP, $Port)
@@ -49,7 +54,7 @@ try{
 				write-host $line
 				if ($traffic){ $traffic = $traffic + "$line`n" }
 				else {$traffic = "$line`n"}
-			}while ($line)
+			}while ($line -or $line -eq "`r`n")
 			Write-host "[*] Press f to forward, d to drop, or x to quit"
 			$ui = $Host.UI.RawUI.ReadKey("NoEcho, IncludeKeyDown")
 			if ($ui.Character -eq "x"){exit}
@@ -63,9 +68,8 @@ try{
 			elseif($ui.Character -eq "f"){
 				if ($ip_addr -eq '0.0.0.0'){$ip_addr = '127.0.0.1'}
 				#open 9080 w/ nc to test
-				$port = 9080
-				write-host "[*] Forwarding traffic to $ip_addr`:$port"
-				Invoke-Connection -IP $ip_addr -Port $port -Data $traffic
+				#$port = 9080
+				Invoke-Connection -IP $ip_addr -Data $traffic
 				start-sleep 1
 			}
 			else{
@@ -83,7 +87,7 @@ try{
 catch [System.Net.Sockets.SocketException]{Write-host "[-] sumthing borked`n[-] svr still open" -fore red}
 catch {
 	Write-host "[-] sumthing else borked, not svr this time" -fore red
-	Write-Warning $($_.Exception.Message)
+	Write-Warning $_.Exception.Message
 }
 finally{
 	write-host "[*] Closing connection..." -fore cyan
