@@ -50,11 +50,33 @@ try{
 			$strm = $conn.GetStream()
 			$read = New-Object System.IO.StreamReader $strm
 			do{
-				$line = $read.ReadLine()
-				write-host $line
-				if ($traffic){ $traffic = $traffic + "$line`n" }
-				else {$traffic = "$line`n"}
-			}while ($line -or $line -eq "`r`n")
+				if ($tmp -and $cl){
+					$L = 0
+					while($L -le $cl){
+						$dline = $read.Read()
+						$bdata  = $bdata + "$dline "
+						$L = $L + 1
+						if ($L -eq $cl){ break }
+					}
+					if ($bdata){
+						$ByteArray = $bdata.Split(' ')|ForEach-Object{ [byte]$_ }
+						$data = [Text.Encoding]::Ascii.GetString($ByteArray)
+						write $data
+						}
+					break
+				}
+				else{
+					$hline = $read.ReadLine()
+					write $hline
+					if ($hline -like "Content-Length*"){
+						$cl = ($hline -split ':')[1]
+						$cl = [int]$cl
+					}
+					if ($header){ $header = $header + "$hline`n"}
+					else {$header = "$hline`n"}
+				}
+				if ($hline -eq '' -and -not $tmp -and $cl){ $tmp = "tmp" }
+			}while ($hline -or ($tmp -and $cl))
 			Write-host "[*] Press f to forward, d to drop, or x to quit"
 			$ui = $Host.UI.RawUI.ReadKey("NoEcho, IncludeKeyDown")
 			if ($ui.Character -eq "x"){exit}
@@ -67,6 +89,8 @@ try{
 			}
 			elseif($ui.Character -eq "f"){
 				if ($ip_addr -eq '0.0.0.0'){$ip_addr = '127.0.0.1'}
+				if ($data){$traffic = $header + $dline}
+				else {$traffic = $header}
 				#open 9080 w/ nc to test
 				#$port = 9080
 				Invoke-Connection -IP $ip_addr -Data $traffic
@@ -79,14 +103,27 @@ try{
 		}
 		start-sleep 0.5
 		if ($traffic){Clear-Variable -name traffic}
+		if ($hline){Clear-Variable -name hline}
+		if ($dline){Clear-Variable -name dline}
+		if ($tmp){Clear-Variable -name tmp}
+		if ($bdata){Clear-Variable -name bdata}
+		if ($ByteArray){Clear-Variable -name ByteArray}
+		if ($cl){Clear-Variable -name cl}
+		if ($L){Clear-Variable -name L}
+		if ($header){Clear-Variable -name header}
+		if ($tmp){Clear-Variable -name tmp}
+		if ($data){Clear-Variable -name data}
 		if ($strm){$strm.Dispose()}
 		if ($read){$read.Dispose()}
 		if ($conn){$conn.close()}
 	}
 }
-catch [System.Net.Sockets.SocketException]{Write-host "[-] sumthing borked`n[-] svr still open" -fore red}
+catch [System.Net.Sockets.SocketException]{
+	Write-host "[-] sumthing borked`n[-] svr still open" -fore red
+	Write-Warning $_.Exception.Message
+	}
 catch {
-	Write-host "[-] sumthing else borked, not svr this time" -fore red
+	Write-host "[-] Error occuered:" -fore red
 	Write-Warning $_.Exception.Message
 }
 finally{
