@@ -24,7 +24,7 @@ Function Initialize-Server{
 	[Alias("Start-Server", "Open-Server", "Invoke-ServerOpen")]
 	
 	param(
-		[Parameter(Mandatory=$false)][String]$IP = "0.0.0.0",
+		[Parameter(Mandatory=$false)][String]$IP = '0.0.0.0',
 		[Parameter(Mandatory=$false)][Int32]$Port = 1080
 	)
 	
@@ -50,33 +50,38 @@ try{
 			$strm = $conn.GetStream()
 			$read = New-Object System.IO.StreamReader $strm
 			do{
-				if ($tmp -and $cl){
-					$L = 0
-					while($L -le $cl){
-						$dline = $read.Read()
-						$bdata  = $bdata + "$dline "
-						$L = $L + 1
-						if ($L -eq $cl){ break }
+				if ($tmp -and $ContentLength){
+					$line_interval = 0
+					while($interval -le $ContentLength){
+						$data_line = $read.Read()
+						$full_data  = $full_data + "$data_line "
+						$line_interval = $line_interval + 1
+						if ($line_interval -eq $ContentLength){ break }
 					}
-					if ($bdata){
-						$ByteArray = $bdata.Split(' ')|ForEach-Object{ [byte]$_ }
+					if ($full_data){
+						$ByteArray = $full_data.Split(' ')|ForEach-Object{ [byte]$_ }
 						$data = [Text.Encoding]::Ascii.GetString($ByteArray)
 						write $data
 						}
 					break
 				}
 				else{
-					$hline = $read.ReadLine()
-					write $hline
-					if ($hline -like "Content-Length*"){
-						$cl = ($hline -split ':')[1]
-						$cl = [int]$cl
+					$header_line = $read.ReadLine()
+					write $header_line
+					if ($header_line -like "Host:*"){
+						$host_line = ($header_line -split ": ")[1]
+						$recv_ip = ($host_line -split ":")[0]
+						$recv_port = ($host_line -split ":")[1]
 					}
-					if ($header){ $header = $header + "$hline`n"}
-					else {$header = "$hline`n"}
+					if ($host_line -like "Content-Length*"){
+						$ContentLength = ($host_line -split ':')[1]
+						$ContentLength = [int]$ContentLength
+					}
+					if ($header){ $header = $header + "$header_line`n"}
+					else {$header = "$header_line`n"}
 				}
-				if ($hline -eq '' -and -not $tmp -and $cl){ $tmp = "tmp" }
-			}while ($hline -or ($tmp -and $cl))
+				if ($header_line -eq '' -and -not $tmp -and $ContentLength){ $tmp = "tmp" }
+			}while ($header_line -or ($tmp -and $ContentLength))
 			Write-host "[*] Press f to forward, d to drop, or x to quit"
 			$ui = $Host.UI.RawUI.ReadKey("NoEcho, IncludeKeyDown")
 			if ($ui.Character -eq "x"){exit}
@@ -93,7 +98,8 @@ try{
 				else {$traffic = $header}
 				#open 9080 w/ nc to test
 				#$port = 9080
-				Invoke-Connection -IP $ip_addr -Data $traffic
+				Invoke-Connection -Data $traffic
+				#Invoke-Connection -IP $recv_ip -Port $recv_port -Data $traffic
 				start-sleep 1
 			}
 			else{
@@ -103,13 +109,16 @@ try{
 		}
 		start-sleep 0.5
 		if ($traffic){Clear-Variable -name traffic}
-		if ($hline){Clear-Variable -name hline}
-		if ($dline){Clear-Variable -name dline}
+		if ($header_line){Clear-Variable -name header_line}
+		if ($data_line){Clear-Variable -name data_line}
 		if ($tmp){Clear-Variable -name tmp}
-		if ($bdata){Clear-Variable -name bdata}
+		if ($full_data){Clear-Variable -name full_data}
 		if ($ByteArray){Clear-Variable -name ByteArray}
-		if ($cl){Clear-Variable -name cl}
-		if ($L){Clear-Variable -name L}
+		if ($ContentLength){Clear-Variable -name ContentLength}
+		if ($line_interval){Clear-Variable -name line_interval}
+		if ($host_line){Clear-Variable -name host_line}
+		if ($recv_ip){Clear-Variable -name recv_ip}
+		if ($recv_port){Clear-Variable -name recv_port}
 		if ($header){Clear-Variable -name header}
 		if ($tmp){Clear-Variable -name tmp}
 		if ($data){Clear-Variable -name data}
@@ -123,7 +132,7 @@ catch [System.Net.Sockets.SocketException]{
 	Write-Warning $_.Exception.Message
 	}
 catch {
-	Write-host "[-] Error occuered:" -fore red
+	Write-host "[-] Error occured:" -fore red
 	Write-Warning $_.Exception.Message
 }
 finally{
