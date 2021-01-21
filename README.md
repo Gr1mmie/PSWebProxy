@@ -2,7 +2,7 @@
 
 ## Summary
 
-PsWebProxy is a web proxy capable of forward/droping packets captured using raw PowerShell sockets.
+PsWebProxy is a web proxy capable of forwarding/dropping packets captured using raw PowerShell sockets.
 
 ## Default Options
 
