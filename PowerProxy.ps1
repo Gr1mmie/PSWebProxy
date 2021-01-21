@@ -126,7 +126,7 @@ try{
 	}
 }
 catch [System.Net.Sockets.SocketException]{
-	Write-host "[-] sumthing borked`n[-] svr still open" -fore red
+	Write-host "[-] Sumthing borked`n[-] svr still open" -fore red
 	Write-Warning $_.Exception.Message
 	}
 catch {
