@@ -3,6 +3,7 @@ Function Invoke-Connection{
 	[Alias("Invoke-Fwd", "Open-Client", "Open-Conn", "Invoke-Conn")]
 	
 	param(
+		# default settings for testing w/ nc
 		[Parameter(Mandatory=$false)][String]$IP = "127.0.0.1",
 		[Parameter(Mandatory=$false)][Int32]$Port = 9080,
 		[Parameter(Mandatory=$true)][String]$Data
@@ -96,10 +97,7 @@ try{
 				if ($ip_addr -eq '0.0.0.0'){$ip_addr = '127.0.0.1'}
 				if ($data){$traffic = $header + $dline}
 				else {$traffic = $header}
-				#open 9080 w/ nc to test
-				#$port = 9080
 				Invoke-Connection -Data $traffic
-				#Invoke-Connection -IP $recv_ip -Port $recv_port -Data $traffic
 				start-sleep 1
 			}
 			else{
