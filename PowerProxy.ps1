@@ -60,7 +60,7 @@ try{
 						if ($line_interval -eq $ContentLength){ break }
 					}
 					if ($full_data){
-						$ByteArray = $full_data.Split(' ')|ForEach-Object{ [byte]$_ }
+						$ByteArray = $full_data.Split(' ') | ForEach-Object{ [byte]$_ }
 						$data = [Text.Encoding]::Ascii.GetString($ByteArray)
 						write $data
 						}
