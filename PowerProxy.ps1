@@ -53,7 +53,7 @@ try{
 			do{
 				if ($tmp -and $ContentLength){
 					$line_interval = 0
-					while($interval -le $ContentLength){
+					while ($interval -le $ContentLength){
 						$data_line = $read.Read()
 						$full_data  = $full_data + "$data_line "
 						$line_interval = $line_interval + 1
@@ -86,14 +86,14 @@ try{
 			Write-host "[*] Press f to forward, d to drop, or x to quit"
 			$ui = $Host.UI.RawUI.ReadKey("NoEcho, IncludeKeyDown")
 			if ($ui.Character -eq "x"){exit}
-			elseif($ui.Character -eq "d"){
+			elseif ($ui.Character -eq "d"){
 				Write-host "[*] Dropping packet..."
 				start-sleep 1
 				if ($strm){$strm.Dispose()}
 				if ($read){$read.Dispose()}
 				if ($conn){$conn.close()}
 			}
-			elseif($ui.Character -eq "f"){
+			elseif ($ui.Character -eq "f"){
 				if ($ip_addr -eq '0.0.0.0'){$ip_addr = '127.0.0.1'}
 				if ($data){$traffic = $header + $dline}
 				else {$traffic = $header}
